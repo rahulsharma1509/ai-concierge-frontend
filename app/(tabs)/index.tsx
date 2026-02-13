@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Linking,
+  Platform,
 } from "react-native";
 
 const BASE_URL = "https://ai-concierge-backend-p6jv.onrender.com";
@@ -23,7 +24,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || loading) return;
 
     setLoading(true);
     setResult(null);
@@ -37,15 +38,31 @@ export default function HomeScreen() {
         body: JSON.stringify({ message }),
       });
 
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+
       const data: BookingResponse = await res.json();
       setResult(data);
     } catch (error) {
       setResult({
-        message: "Error connecting to server",
+        message: "⚠️ Error connecting to server",
       });
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
+  const handlePhonePress = (phone: string) => {
+    if (Platform.OS === "web") {
+      window.open(`tel:${phone}`);
+    } else {
+      Linking.openURL(`tel:${phone}`);
+    }
+  };
+
+  const handleWebsitePress = (website: string) => {
+    Linking.openURL(website);
   };
 
   return (
@@ -60,7 +77,11 @@ export default function HomeScreen() {
         onChangeText={setMessage}
       />
 
-      <TouchableOpacity style={styles.button} onPress={sendMessage}>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.disabledButton]}
+        onPress={sendMessage}
+        disabled={loading}
+      >
         <Text style={styles.buttonText}>
           {loading ? "Processing..." : "SEND"}
         </Text>
@@ -74,7 +95,7 @@ export default function HomeScreen() {
             {result.phone && (
               <Text
                 style={styles.link}
-                onPress={() => Linking.openURL(`tel:${result.phone}`)}
+                onPress={() => handlePhonePress(result.phone!)}
               >
                 📞 {result.phone}
               </Text>
@@ -83,8 +104,7 @@ export default function HomeScreen() {
             {result.website && (
               <Text
                 style={styles.link}
-                onPress={() => Linking.openURL(result.website!)}
-
+                onPress={() => handleWebsitePress(result.website!)}
               >
                 🌐 Visit Website
               </Text>
@@ -99,8 +119,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
     padding: 20,
+    backgroundColor: "#121212",
   },
   title: {
     fontSize: 22,
@@ -121,6 +141,9 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   buttonText: {
     color: "#fff",
