@@ -11,9 +11,15 @@ import {
 
 const BASE_URL = "https://ai-concierge-backend-p6jv.onrender.com";
 
+type BookingResponse = {
+  message: string;
+  phone?: string;
+  website?: string;
+};
+
 export default function HomeScreen() {
   const [message, setMessage] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<BookingResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
@@ -31,7 +37,7 @@ export default function HomeScreen() {
         body: JSON.stringify({ message }),
       });
 
-      const data = await res.json();
+      const data: BookingResponse = await res.json();
       setResult(data);
     } catch (error) {
       setResult({
@@ -77,7 +83,8 @@ export default function HomeScreen() {
             {result.website && (
               <Text
                 style={styles.link}
-                onPress={() => Linking.openURL(result.website)}
+                onPress={() => Linking.openURL(result.website!)}
+
               >
                 🌐 Visit Website
               </Text>
