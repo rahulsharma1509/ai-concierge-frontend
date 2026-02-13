@@ -19,9 +19,9 @@ type BookingResponse = {
 };
 
 export default function HomeScreen() {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<string>("");
   const [result, setResult] = useState<BookingResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
