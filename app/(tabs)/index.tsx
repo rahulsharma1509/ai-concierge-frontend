@@ -1,29 +1,27 @@
-import Constants from "expo-constants";
 import { useState } from "react";
-import { View, TextInput, Button, Text, ScrollView, StyleSheet } from "react-native";
-
-const getBaseUrl = () => {
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    (Constants as any).manifest?.debuggerHost;
-
-  if (!hostUri) {
-    return "http://localhost:3000";
-  }
-
-  const host = hostUri.split(":")[0];
-  return `http://${host}:3000`;
-};
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Linking,
+} from "react-native";
 
 const BASE_URL = "https://ai-concierge-backend-p6jv.onrender.com";
 
-
-
 export default function HomeScreen() {
   const [message, setMessage] = useState("");
-  const [response, setResponse] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
+    if (!message.trim()) return;
+
+    setLoading(true);
+    setResult(null);
+
     try {
       const res = await fetch(`${BASE_URL}/chat`, {
         method: "POST",
@@ -34,10 +32,14 @@ export default function HomeScreen() {
       });
 
       const data = await res.json();
-      setResponse(data.reply);
+      setResult(data);
     } catch (error) {
-      setResponse("Error connecting to server");
+      setResult({
+        message: "Error connecting to server",
+      });
     }
+
+    setLoading(false);
   };
 
   return (
@@ -46,15 +48,42 @@ export default function HomeScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Type: Book table for 2 at Pizza 4P..."
+        placeholder="Book table at Pizza 4P Sunday 8pm for 2"
+        placeholderTextColor="#888"
         value={message}
         onChangeText={setMessage}
       />
 
-      <Button title="Send" onPress={sendMessage} />
+      <TouchableOpacity style={styles.button} onPress={sendMessage}>
+        <Text style={styles.buttonText}>
+          {loading ? "Processing..." : "SEND"}
+        </Text>
+      </TouchableOpacity>
 
       <ScrollView style={styles.responseBox}>
-        <Text>{response}</Text>
+        {result && (
+          <View style={styles.resultCard}>
+            <Text style={styles.resultText}>{result.message}</Text>
+
+            {result.phone && (
+              <Text
+                style={styles.link}
+                onPress={() => Linking.openURL(`tel:${result.phone}`)}
+              >
+                📞 {result.phone}
+              </Text>
+            )}
+
+            {result.website && (
+              <Text
+                style={styles.link}
+                onPress={() => Linking.openURL(result.website)}
+              >
+                🌐 Visit Website
+              </Text>
+            )}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -63,21 +92,48 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#121212",
     padding: 20,
-    marginTop: 40,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
+    color: "#fff",
     marginBottom: 20,
   },
   input: {
     borderWidth: 1,
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    borderColor: "#444",
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    color: "#fff",
+  },
+  button: {
+    backgroundColor: "#2979FF",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   responseBox: {
     marginTop: 20,
+  },
+  resultCard: {
+    backgroundColor: "#1E1E1E",
+    padding: 16,
+    borderRadius: 10,
+  },
+  resultText: {
+    color: "#fff",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  link: {
+    color: "#4da6ff",
+    marginTop: 5,
   },
 });
